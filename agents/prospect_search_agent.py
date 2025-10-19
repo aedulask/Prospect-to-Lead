@@ -1,11 +1,11 @@
-import time
-import random
 import os
+import requests
+
 class ProspectSearchAgent:
     """
-    Demo-ready ProspectSearchAgent:
-    Simulates searching for B2B prospects using ICP and signals.
-    Returns fake leads from Clay and Apollo for demo purposes.
+    ProspectSearchAgent:
+    Searches for B2B prospects using ICP (industry, location, revenue, employee count)
+    and signals (recent funding, hiring for sales) from Clay and Apollo APIs.
     """
 
     def __init__(self, clay_api_key=None, apollo_api_key=None):
@@ -14,54 +14,73 @@ class ProspectSearchAgent:
         self.clay_endpoint = "https://api.clay.com/search"
         self.apollo_endpoint = "https://api.apollo.io/v1/mixed_search"
 
-    def generate_fake_lead(self, source):
-        """
-        Generate a single fake lead.
-        """
-        companies = ["Acme Corp", "Beta Inc", "Gamma LLC", "Delta Solutions"]
-        contacts = ["John Doe", "Jane Smith", "Alice Johnson", "Bob Lee"]
-        emails = ["john@acme.com", "jane@beta.com", "alice@gamma.com", "bob@delta.com"]
-        signals = ["recent_funding", "hiring_for_sales"]
-        idx = random.randint(0, 3)
-        lead = {
-            "company": companies[idx],
-            "contact_name": contacts[idx],
-            "email": emails[idx],
-            "linkedin": f"https://linkedin.com/in/{contacts[idx].replace(' ', '').lower()}",
-            "signal": random.choice(signals),
-            "source": source
-        }
-        print(f"[ProspectSearchAgent] {source} lead generated: {lead}")
-        return lead
-
     def search_clay(self, icp, signals):
         """
-        Simulate Clay API search.
+        Call Clay API to search for companies matching the ICP.
+        Returns list of leads.
         """
-        time.sleep(0.3)
-        return [self.generate_fake_lead("Clay") for _ in range(2)]
+        headers = {"Authorization": f"Bearer {self.clay_api_key}"}
+        payload = {"icp": icp, "signals": signals}
+        try:
+            response = requests.post(self.clay_endpoint, json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            # Map to your output schema
+            leads = [
+                {
+                    "company": lead.get("company_name"),
+                    "contact_name": lead.get("contact_name"),
+                    "email": lead.get("email"),
+                    "linkedin": lead.get("linkedin"),
+                    "signal": lead.get("signal"),
+                }
+                for lead in data.get("results", [])
+            ]
+            return leads
+        except Exception as e:
+            print(f"[Clay API Error]: {e}")
+            return []
 
     def search_apollo(self, icp, signals):
         """
-        Simulate Apollo API search.
+        Call Apollo API to search for companies/contacts.
+        Returns list of leads.
         """
-        time.sleep(0.3)
-        return [self.generate_fake_lead("Apollo") for _ in range(2)]
+        headers = {"Authorization": f"Bearer {self.apollo_api_key}"}
+        payload = {"icp": icp, "signals": signals}
+        try:
+            response = requests.post(self.apollo_endpoint, json=payload, headers=headers)
+            response.raise_for_status()
+            data = response.json()
+            leads = [
+                {
+                    "company": lead.get("company_name"),
+                    "contact_name": lead.get("contact_name"),
+                    "email": lead.get("email"),
+                    "linkedin": lead.get("linkedin"),
+                    "signal": lead.get("signal"),
+                }
+                for lead in data.get("results", [])
+            ]
+            return leads
+        except Exception as e:
+            print(f"[Apollo API Error]: {e}")
+            return []
 
     def run(self, icp, signals):
         """
-        Generate combined fake leads for demo.
+        Main method to run prospect search.
+        Returns combined leads from Clay and Apollo.
         """
         clay_leads = self.search_clay(icp, signals)
         apollo_leads = self.search_apollo(icp, signals)
         combined = clay_leads + apollo_leads
-        # Deduplicate by email
+        # Optional: deduplicate leads based on email or company
         unique_leads = {lead['email']: lead for lead in combined}.values()
-        print(f"[ProspectSearchAgent] Total unique leads: {len(unique_leads)}")
         return list(unique_leads)
 
 
-# Demo run
+# Example usage
 if __name__ == "__main__":
     icp = {
         "industry": "SaaS",
@@ -73,6 +92,6 @@ if __name__ == "__main__":
 
     agent = ProspectSearchAgent()
     leads = agent.run(icp, signals)
-    print("\n[ProspectSearchAgent] Final Leads:")
+    print(f"Found {len(leads)} leads")
     for lead in leads:
         print(lead)

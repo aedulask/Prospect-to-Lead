@@ -1,10 +1,12 @@
-import time
-import random
 import os
+import requests
+import time
+
 class ResponseTrackerAgent:
     """
-    Demo-ready ResponseTrackerAgent:
-    Simulates tracking email responses, clicks, replies, and meetings.
+    ResponseTrackerAgent:
+    Monitors email responses, opens, clicks, and meeting bookings
+    for sent campaigns using Apollo API.
     """
 
     def __init__(self, apollo_api_key=None):
@@ -13,48 +15,48 @@ class ResponseTrackerAgent:
 
     def get_campaign_responses(self, campaign_id):
         """
-        Generate fake responses for a single campaign.
+        Fetch responses for a single campaign ID.
         """
-        fake_leads = [
-            "john.doe@acme.com",
-            "jane.smith@beta.com",
-            "alice@gamma.com",
-            "bob@delta.com"
-        ]
-        responses = []
-        for lead in fake_leads:
-            response = {
-                "lead": lead,
-                "opened": random.choice([True, True, False]),
-                "clicked": random.choice([True, False, False]),
-                "replied": random.choice([True, False, False, False]),
-                "meeting_booked": random.choice([True, False, False, False]),
-                "timestamp": time.time(),
-                "campaign_id": campaign_id
-            }
-            responses.append(response)
-            print(f"[ResponseTrackerAgent] Tracked response: {response}")
-        return responses
+        headers = {"Authorization": f"Bearer {self.apollo_api_key}"}
+        params = {"campaign_id": campaign_id}
+
+        try:
+            response = requests.get(self.tracking_endpoint, headers=headers, params=params)
+            response.raise_for_status()
+            data = response.json()
+            # Map to workflow schema
+            responses = []
+            for r in data.get("results", []):
+                responses.append({
+                    "lead": r.get("email"),
+                    "opened": r.get("opened", False),
+                    "clicked": r.get("clicked", False),
+                    "replied": r.get("replied", False),
+                    "meeting_booked": r.get("meeting_booked", False),
+                    "timestamp": r.get("timestamp")
+                })
+            return responses
+        except Exception as e:
+            print(f"[Apollo API Error]: {e} for campaign {campaign_id}")
+            return []
 
     def run(self, campaign_ids):
         """
-        Track responses for a list of campaign_ids (demo mode).
+        Track responses for a list of campaign_ids.
         """
         all_responses = []
         for cid in campaign_ids:
             responses = self.get_campaign_responses(cid)
             all_responses.extend(responses)
-            time.sleep(0.3)  # Small delay for demo effect
-        print(f"[ResponseTrackerAgent] Total responses tracked: {len(all_responses)}")
+            time.sleep(0.5)  # Respect API rate limits
         return all_responses
 
 
-# Demo run
+# Example usage
 if __name__ == "__main__":
-    sample_campaign_ids = ["demo_1234", "demo_5678"]
+    sample_campaign_ids = ["campaign_12345", "campaign_67890"]
 
     agent = ResponseTrackerAgent()
     responses = agent.run(sample_campaign_ids)
-    print("\n[ResponseTrackerAgent] Final Responses:")
     for r in responses:
         print(r)

@@ -3,9 +3,8 @@ import openai
 
 class OutreachContentAgent:
     """
-    Demo-ready OutreachContentAgent:
+    OutreachContentAgent:
     Generates personalized outreach emails for ranked leads using OpenAI GPT.
-    Prints emails to console for demo purposes.
     """
 
     def __init__(self, openai_api_key=None, model="gpt-4o-mini"):
@@ -15,7 +14,7 @@ class OutreachContentAgent:
 
     def generate_email(self, lead, persona="SDR", tone="friendly"):
         """
-        Generate a personalized email for a single lead using the new OpenAI API interface.
+        Generate a personalized email for a single lead.
         """
         prompt = f"""
 You are a {persona} writing a {tone} outreach email.
@@ -29,14 +28,13 @@ Lead details:
 Write a concise, personalized email introducing your company, and suggest a next step for a call or demo.
 """
         try:
-            response = openai.chat.completions.create(
+            response = openai.ChatCompletion.create(
                 model=self.model,
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.7,
                 max_tokens=250
             )
             email_body = response.choices[0].message.content.strip()
-            print(f"[OutreachContentAgent] Generated email for {lead.get('email')}:\n{email_body}\n")
             return email_body
         except Exception as e:
             print(f"[OpenAI API Error]: {e}")
@@ -53,11 +51,10 @@ Write a concise, personalized email introducing your company, and suggest a next
                 "lead": lead.get("email"),
                 "email_body": email_body
             })
-        print(f"[OutreachContentAgent] Completed generating emails for {len(ranked_leads)} leads.")
         return messages
 
 
-# Demo run
+# Example usage
 if __name__ == "__main__":
     sample_leads = [
         {
@@ -67,19 +64,10 @@ if __name__ == "__main__":
             "technologies": ["Python", "AWS"],
             "email": "john.doe@acme.com",
             "score": 1.0
-        },
-        {
-            "company": "Beta Inc",
-            "contact": "Jane Smith",
-            "role": "CEO",
-            "technologies": ["JavaScript", "GCP"],
-            "email": "jane.smith@beta.com",
-            "score": 0.9
         }
     ]
 
     agent = OutreachContentAgent()
     messages = agent.run(sample_leads)
-    print("\n[OutreachContentAgent] Final Messages:")
     for msg in messages:
         print(msg)

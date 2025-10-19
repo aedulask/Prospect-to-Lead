@@ -1,6 +1,6 @@
 class ScoringAgent:
     """
-    Demo-ready ScoringAgent:
+    ScoringAgent:
     Scores enriched leads based on configurable ICP criteria and returns ranked leads.
     """
 
@@ -28,23 +28,23 @@ class ScoringAgent:
         """
         score = 0
 
-        # Employee count score (demo: prefer 100-1000)
+        # Employee count score (example: prefer 100-1000)
         employee_count = lead.get("employee_count", 0)
         if 100 <= employee_count <= 1000:
             score += self.scoring_criteria["employee_count"]
 
-        # Revenue score (demo: prefer 20M-200M)
+        # Revenue score (example: prefer 20M-200M)
         revenue = lead.get("revenue", 0)
         if 20_000_000 <= revenue <= 200_000_000:
             score += self.scoring_criteria["revenue"]
 
-        # Role match (demo: prefer "CEO", "CTO", "VP Sales", "Founder")
+        # Role match (example: prefer "CEO", "CTO", "VP Sales")
         preferred_roles = ["CEO", "CTO", "VP Sales", "Founder"]
         role = lead.get("role", "").lower()
         if any(r.lower() in role for r in preferred_roles):
             score += self.scoring_criteria["role_match"]
 
-        # Tech stack match (demo: has Python, Salesforce, AWS)
+        # Tech stack match (example: has Python, Salesforce)
         desired_tech = ["Python", "Salesforce", "AWS"]
         technologies = lead.get("technologies", [])
         if any(tech in technologies for tech in desired_tech):
@@ -60,16 +60,14 @@ class ScoringAgent:
         for lead in enriched_leads:
             lead_score = self.score_lead(lead)
             lead["score"] = lead_score
-            print(f"[ScoringAgent] Lead scored: {lead}")
             scored_leads.append(lead)
 
         # Sort by score descending
         ranked_leads = sorted(scored_leads, key=lambda x: x["score"], reverse=True)
-        print(f"[ScoringAgent] Ranked {len(ranked_leads)} leads")
         return ranked_leads
 
 
-# Demo run
+# Example usage
 if __name__ == "__main__":
     sample_leads = [
         {
@@ -92,6 +90,5 @@ if __name__ == "__main__":
 
     agent = ScoringAgent()
     ranked = agent.run(sample_leads)
-    print("\n[ScoringAgent] Final Ranked Leads:")
     for lead in ranked:
         print(lead)

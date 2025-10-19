@@ -1,5 +1,0 @@
-requests
-openai>=1.0.0
-python-dotenv
-gspread
-oauth2client

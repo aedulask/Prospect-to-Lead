@@ -6,8 +6,8 @@
     "CLAY_API_KEY": "75dc32c8b43740ee6b84",
     "APOLLO_API_KEY": "XHwBmSDsdJYHcc3k-zvTxA",
     "CLEARBIT_KEY": "{{CLEARBIT_KEY}}",
-    "OPENAI_KEY": "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",
-    "SHEET_ID": "AIzaSyCr0k6EhvMb4ejhO8w_2keLOggRbnNvJcM"
+    "OPENAI_KEY": "{{OPENAI_KEY}}",
+    "SHEET_ID": "{{SHEET_ID}}"
   },
 
   "steps": [
@@ -25,12 +25,30 @@
       },
       "instructions": "Use Clay and Apollo APIs to search for company and contact data matching the ICP. Return structured leads.",
       "tools": [
-        { "name": "ClayAPI", "config": { "api_key": "{{CLAY_API_KEY}}", "endpoint": "https://api.clay.com/search" } },
-        { "name": "ApolloAPI", "config": { "api_key": "{{APOLLO_API_KEY}}", "endpoint": "https://api.apollo.io/v1/mixed_search" } }
+        {
+          "name": "ClayAPI",
+          "config": {
+            "api_key": "{{CLAY_API_KEY}}",
+            "endpoint": "https://api.clay.com/search"
+          }
+        },
+        {
+          "name": "ApolloAPI",
+          "config": {
+            "api_key": "{{APOLLO_API_KEY}}",
+            "endpoint": "https://api.apollo.io/v1/mixed_search"
+          }
+        }
       ],
       "output_schema": {
         "leads": [
-          { "company": "string", "contact_name": "string", "email": "string", "linkedin": "string", "signal": "string" }
+          {
+            "company": "string",
+            "contact_name": "string",
+            "email": "string",
+            "linkedin": "string",
+            "signal": "string"
+          }
         ]
       }
     },
@@ -39,11 +57,21 @@
       "id": "enrichment",
       "agent": "DataEnrichmentAgent",
       "inputs": { "leads": "{{prospect_search.output.leads}}" },
-      "instructions": "Demo mode: returns fake enriched lead data for console display.",
-      "tools": [],
+      "instructions": "Enrich lead data using LinkedIn scraping or Clearbit API.",
+      "tools": [
+        {
+          "name": "Clearbit",
+          "config": { "api_key": "{{CLEARBIT_KEY}}" }
+        }
+      ],
       "output_schema": {
         "enriched_leads": [
-          { "company": "string", "contact": "string", "role": "string", "technologies": "array", "employee_count": "integer", "revenue": "integer" }
+          {
+            "company": "string",
+            "contact": "string",
+            "role": "string",
+            "technologies": "array"
+          }
         ]
       }
     },
@@ -51,7 +79,10 @@
     {
       "id": "scoring",
       "agent": "ScoringAgent",
-      "inputs": { "enriched_leads": "{{enrichment.output.enriched_leads}}", "scoring_criteria": "{{config.scoring}}" },
+      "inputs": {
+        "enriched_leads": "{{enrichment.output.enriched_leads}}",
+        "scoring_criteria": "{{config.scoring}}"
+      },
       "instructions": "Score leads based on configurable ICP scoring function.",
       "tools": [],
       "output_schema": { "ranked_leads": "array" }
@@ -60,18 +91,36 @@
     {
       "id": "outreach_content",
       "agent": "OutreachContentAgent",
-      "inputs": { "ranked_leads": "{{scoring.output.ranked_leads}}", "persona": "SDR", "tone": "friendly" },
+      "inputs": {
+        "ranked_leads": "{{scoring.output.ranked_leads}}",
+        "persona": "SDR",
+        "tone": "friendly"
+      },
       "instructions": "Generate personalized outreach messages using LLM and prospect context.",
-      "tools": [ { "name": "OpenAI", "config": { "api_key": "{{OPENAI_KEY}}" } } ],
-      "output_schema": { "messages": [ { "lead": "string", "email_body": "string" } ] }
+      "tools": [
+        {
+          "name": "OpenAI",
+          "config": { "api_key": "{{OPENAI_KEY}}" }
+        }
+      ],
+      "output_schema": {
+        "messages": [
+          { "lead": "string", "email_body": "string" }
+        ]
+      }
     },
 
     {
       "id": "send",
       "agent": "OutreachExecutorAgent",
       "inputs": { "messages": "{{outreach_content.output.messages}}" },
-      "instructions": "Demo mode: print emails with campaign IDs instead of sending.",
-      "tools": [ { "name": "ApolloAPI", "config": { "api_key": "{{APOLLO_API_KEY}}" } } ],
+      "instructions": "Send emails using SendGrid or Apollo API and log delivery.",
+      "tools": [
+        {
+          "name": "ApolloAPI",
+          "config": { "api_key": "{{APOLLO_API_KEY}}" }
+        }
+      ],
       "output_schema": { "sent_status": "array" }
     },
 
@@ -79,8 +128,13 @@
       "id": "response_tracking",
       "agent": "ResponseTrackerAgent",
       "inputs": { "campaign_id": "{{send.output.campaign_id}}" },
-      "instructions": "Demo mode: return fake responses for console display.",
-      "tools": [ { "name": "ApolloAPI", "config": { "api_key": "{{APOLLO_API_KEY}}" } } ],
+      "instructions": "Monitor email responses and meeting bookings using Apollo API.",
+      "tools": [
+        {
+          "name": "ApolloAPI",
+          "config": { "api_key": "{{APOLLO_API_KEY}}" }
+        }
+      ],
       "output_schema": { "responses": "array" }
     },
 
@@ -88,8 +142,13 @@
       "id": "feedback_trainer",
       "agent": "FeedbackTrainerAgent",
       "inputs": { "responses": "{{response_tracking.output.responses}}" },
-      "instructions": "Analyze responses and log recommendations to Google Sheets and console.",
-      "tools": [ { "name": "GoogleSheets", "config": { "sheet_id": "{{SHEET_ID}}" } } ],
+      "instructions": "Analyze open/click/reply data, suggest new configurations (subject line change, ICP tweaks) and send for approval.",
+      "tools": [
+        {
+          "name": "GoogleSheets",
+          "config": { "sheet_id": "{{SHEET_ID}}" }
+        }
+      ],
       "output_schema": { "recommendations": "array" }
     }
   ]

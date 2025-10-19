@@ -2,7 +2,7 @@ import os
 import json
 from dotenv import load_dotenv
 
-# Load demo-ready agents
+# Load agents
 from agents.prospect_search_agent import ProspectSearchAgent
 from agents.data_enrichment_agent import DataEnrichmentAgent
 from agents.scoring_agent import ScoringAgent
@@ -34,23 +34,19 @@ AGENT_CLASSES = {
 
 def replace_placeholders(obj, outputs):
     """
-    Recursively replace {{step.output.key}} with actual data from previous step outputs.
-    Works with dicts, lists, and strings pointing to lists.
+    Recursively replace {{step.output.key}} with actual data from previous step outputs
     """
     if isinstance(obj, dict):
         return {k: replace_placeholders(v, outputs) for k, v in obj.items()}
     elif isinstance(obj, list):
         return [replace_placeholders(item, outputs) for item in obj]
     elif isinstance(obj, str) and obj.startswith("{{") and obj.endswith("}}"):
-        ref = obj[2:-2].strip()  # e.g., prospect_search.output.leads
+        ref = obj[2:-2].strip()
+        # Example: prospect_search.output.leads
         parts = ref.split(".")
         data = outputs
         for part in parts:
-            if isinstance(data, dict):
-                data = data.get(part)
-            else:
-                # If data is a list, stop descending and return it as-is
-                break
+            data = data.get(part, {})
         return data
     else:
         return obj
@@ -65,7 +61,7 @@ def main():
         # Prepare inputs
         inputs = replace_placeholders(step.get("inputs", {}), outputs)
 
-        # Instantiate agent
+        # Instantiate agent with relevant API keys
         if agent_name == "ProspectSearchAgent":
             agent = AgentClass(
                 clay_api_key=os.getenv("CLAY_API_KEY"),
@@ -74,7 +70,7 @@ def main():
             result = agent.run(**inputs)
 
         elif agent_name == "DataEnrichmentAgent":
-            agent = AgentClass()  # Demo agent, no API key
+            agent = AgentClass(pdl_api_key=os.getenv("PDL_API_KEY"))
             result = agent.run(inputs.get("leads", []))
 
         elif agent_name == "ScoringAgent":
@@ -95,20 +91,21 @@ def main():
 
         elif agent_name == "ResponseTrackerAgent":
             agent = AgentClass(apollo_api_key=os.getenv("APOLLO_API_KEY"))
-            # Extract campaign IDs from previous step results
-            campaign_ids = [item.get("campaign_id") for item in inputs if isinstance(item, dict) and item.get("campaign_id")]
+            # Extract campaign IDs from previous step
+            campaign_ids = [item.get("campaign_id") for item in inputs.get("campaign_id", []) if item.get("campaign_id")]
             result = agent.run(campaign_ids)
 
         elif agent_name == "FeedbackTrainerAgent":
-            agent = AgentClass()
+            agent = AgentClass(sheet_id=os.getenv("SHEET_ID"))
+            result = agent.run(inputs.get("responses", []))
 
         else:
             print(f"Unknown agent: {agent_name}")
             continue
 
-        # Store output
+        # Store output for next steps
         outputs[step["id"]] = {"output": result}
-        print(f"Step {step['id']} completed. Output: {str(result)[:200]}...")  # First 200 chars
+        print(f"Step {step['id']} completed. Output: {str(result)[:200]}...")  # Print first 200 chars
 
     print("\n=== Workflow Completed ===")
     return outputs
