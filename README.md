@@ -62,10 +62,11 @@ SHEET_ID=your_google_sheet_id
 - Python 3.10+
 - Packages (install via `pip`):
 ```bash
-
+git clone https://github.com/aedulask/Prospect-to-Lead.git
 cd prospect_to_lead
 python -m venv venv
 venv\Scripts\activate     
 pip install -r requirements.txt  
 python langgraph_builder.py
 ```
+
