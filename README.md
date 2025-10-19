@@ -54,3 +54,18 @@ APOLLO_API_KEY=your_apollo_api_key
 CLEARBIT_KEY=your_clearbit_key
 OPENAI_KEY=your_openai_key
 SHEET_ID=your_google_sheet_id
+```
+
+
+## ⚙️ Requirements
+
+- Python 3.10+
+- Packages (install via `pip`):
+```bash
+
+cd prospect_to_lead
+python -m venv venv
+venv\Scripts\activate     
+pip install -r requirements.txt  
+python langgraph_builder.py
+```
