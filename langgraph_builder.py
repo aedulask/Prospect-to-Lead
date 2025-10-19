@@ -11,7 +11,6 @@ from agents.outreach_executor_agent import OutreachExecutorAgent
 from agents.response_tracker_agent import ResponseTrackerAgent
 from agents.feedback_trainer_agent import FeedbackTrainerAgent
 
-# Load environment variables from .env
 load_dotenv()
 
 # Load workflow.json
@@ -58,7 +57,6 @@ def main():
 
         print(f"\n=== Running Step: {step['id']} ({agent_name}) ===")
 
-        # Prepare inputs
         inputs = replace_placeholders(step.get("inputs", {}), outputs)
 
         # Instantiate agent with relevant API keys
@@ -103,7 +101,6 @@ def main():
             print(f"Unknown agent: {agent_name}")
             continue
 
-        # Store output for next steps
         outputs[step["id"]] = {"output": result}
         print(f"Step {step['id']} completed. Output: {str(result)[:200]}...")  # Print first 200 chars
 
