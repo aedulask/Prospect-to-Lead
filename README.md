@@ -71,3 +71,14 @@ python langgraph_builder.py
 ```
 
 
+---
+
+## Architecture Diagram
+The workflow architecture is visualized below:
+
+![Architecture Diagram](images/architecture_diagram.png)
+
+---
+
+
+
